@@ -23,7 +23,7 @@ class functions
 	/**
 	* Constructor for functions
 	*
-	* @param \phpbb\extension\manager 	$phpbb_extension_manager	Extension manager
+	* @param \phpbb\extension\manager	$phpbb_extension_manager	Extension manager
 	*
 	* @access public
 	*/

@@ -9,6 +9,9 @@ services:
     david63.acpusernotifications.acp.user.notify.controller:
         class: david63\acpusernotifications\controller\acp_user_notify_controller
         arguments:
+            - '@user'
+            - '@config'
+            - '@auth'
             - '@request'
             - '%core.root_path%'
             - '%core.php_ext%'
@@ -16,6 +19,8 @@ services:
             - '@language'
             - '@david63.acpusernotifications.core.functions'
             - '@notification_manager'
+            - '@dbal.conn'
+            - '%tables%'
 
     david63.acpusernotifications.core.functions:
         class: david63\acpusernotifications\core\functions

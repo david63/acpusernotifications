@@ -12,17 +12,30 @@ namespace david63\acpusernotifications\controller;
 /**
 * @ignore
 */
+use phpbb\user;
+use phpbb\config\config;
+use phpbb\auth\auth;
 use phpbb\request\request;
 use phpbb\template\template;
 use phpbb\language\language;
 use david63\acpusernotifications\core\functions;
 use phpbb\notification\manager;
+use phpbb\db\driver\driver_interface;
 
 /**
 * Event listener
 */
 class acp_user_notify_controller implements acp_user_notify_interface
 {
+	/** @var \phpbb\user */
+	protected $user;
+
+	/** @var \phpbb\config\config */
+	protected $config;
+
+	/** @var \phpbb\auth\auth */
+	protected $auth;
+
 	/** @var \phpbb\request\request */
 	protected $request;
 
@@ -44,9 +57,18 @@ class acp_user_notify_controller implements acp_user_notify_interface
 	/** @var \phpbb\notification\manager */
 	protected $notification_manager;
 
+	/** @var \phpbb\db\driver\driver_interface */
+	protected $db;
+
+	/** @var string phpBB tables */
+	protected $tables;
+
 	/**
 	* Constructor
 	*
+	*@param \phpbb\user										$user					User object
+	* @param \phpbb\config\config							$config					Config object
+	* @param \phpbb\auth\auth 								$auth					Auth object
 	* @param \phpbb\request\request							$request				Request object
 	* @param \phpbb\db\driver\driver_interface				$db						The db connection
 	* @param string 										$phpbb_root_path		phpBB root path
@@ -55,12 +77,17 @@ class acp_user_notify_controller implements acp_user_notify_interface
 	* @param \phpbb\language\language						$language				Language object
 	* @param \david63\acpusernotifications\core\functions	$functions				Functions for the extension
 	* @param \phpbb\notification\manager					$notification_manager	Notification manager
+	* @param \phpbb\db\driver\driver_interface				$db						The db connection
+	* @param array											$tables					phpBB db tables
 	*
 	* @return \david63\acpusernotifications\controller\acp_user_notify_controller
 	* @access public
 	*/
-	public function __construct(request $request, $phpbb_root_path, $php_ext, template $template, language $language, functions $functions, manager $notification_manager)
+	public function __construct(user $user, config $config, auth $auth, request $request, $phpbb_root_path, $php_ext, template $template, language $language, functions $functions, manager $notification_manager, driver_interface $db, $tables)
 	{
+		$this->user					= $user;
+		$this->config				= $config;
+		$this->auth					= $auth;
 		$this->request				= $request;
 		$this->phpbb_root_path		= $phpbb_root_path;
 		$this->phpEx				= $php_ext;
@@ -68,6 +95,8 @@ class acp_user_notify_controller implements acp_user_notify_interface
 		$this->language				= $language;
 		$this->functions			= $functions;
 		$this->notification_manager = $notification_manager;
+		$this->db					= $db;
+		$this->tables				= $tables;
 	}
 
 	/**
@@ -88,7 +117,18 @@ class acp_user_notify_controller implements acp_user_notify_interface
 
 		$action = append_sid("{$this->phpbb_root_path}adm/index.$this->phpEx" . '?i=acp_users&amp;mode=usernotify&amp;u=' . $user_id);
 
+		// Because of the way the notification system is written,
+		// we need to change to the actual user in order to retrieve the correct types and methods
+		// for the user being viewed...this is nothing more than a HACK :shock:
+		$user_data = $this->notify_change_user($user_id);
+
 		$subscriptions = $this->notification_manager->get_global_subscriptions($user_id);
+
+		$this->output_notification_methods();
+		$this->output_notification_types($subscriptions);
+
+		// We're in the ACP, have to have the auths for ACP stuff
+		$user_data = $this->notify_change_user($user_id, 'restore', $user_data);
 
 		// Add/remove subscriptions
 		if ($this->request->is_set_post('submit'))
@@ -122,13 +162,9 @@ class acp_user_notify_controller implements acp_user_notify_interface
 			trigger_error($this->language->lang('NOTIFICATIONS_UPDATED') . adm_back_link($action));
 		}
 
-		$this->output_notification_methods('notification_methods');
-		$this->output_notification_types($subscriptions, 'notification_types');
-
 		$this->template->assign_vars(array(
 			'S_AUN'		=> true,
 			'U_ACTION'	=> $action,
-
 		));
 	}
 
@@ -166,6 +202,8 @@ class acp_user_notify_controller implements acp_user_notify_interface
 				'GROUP_NAME' => $this->language->lang($group),
 			));
 
+				//$this->template->alter_block_array($block, array('GROUP_NAME' => $this->language->lang('NOTIFICATION_GROUP_MODERATION')), true, 'delete');
+
 			foreach ($subscription_types as $type => $type_data)
 			{
 				$this->template->assign_block_vars($block, array(
@@ -189,5 +227,57 @@ class acp_user_notify_controller implements acp_user_notify_interface
 		$this->template->assign_vars(array(
 			strtoupper($block) . '_COLS' => count($notification_methods) + 1,
 		));
+	}
+
+	/**
+	* notify_change_user
+	*
+	* @param $user_id	the user id whose notification types we are looking at
+	* @param $mode		the mode either replace or restore
+	* @param $bkup_data	an array of the current users data
+	*
+	* changes the user in the ACP to that of the user chosen in the ACP
+	*/
+	public function notify_change_user($user_id, $mode = 'replace', $bkup_data = false)
+	{
+		switch ($mode)
+		{
+			// Change our user to the one being viewed
+			case 'replace':
+				$bkup_data = ['user_backup' => $this->user->data];
+
+				// Sql to get the user's info
+				$sql = 'SELECT *
+					FROM ' . $this->tables['users'] . '
+					WHERE user_id = ' . (int) $user_id;
+
+				$result	= $this->db->sql_query($sql);
+				$row	= $this->db->sql_fetchrow($result);
+
+				$this->db->sql_freeresult($result);
+
+				// Reset the current user's info to that of the notify user
+				// we do this instead of just using the sql query
+				// for items such as $this->user->data['is_registered'] which isn't a table column from the users table
+				$this->user->data = array_merge($this->user->data, $row);
+
+				// Reset the user's auths
+				$this->auth->acl($this->user->data);
+
+				unset($row);
+
+				return $bkup_data;
+			break;
+
+			// Now we restore the user's stuff
+			case 'restore':
+				$this->user->data = $bkup_data['user_backup'];
+
+				// Set the auths back to normal
+				$this->auth->acl($this->user->data);
+
+				unset($bkup_data);
+			break;
+		}
 	}
 }
