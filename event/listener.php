@@ -28,7 +28,7 @@ class listener implements EventSubscriberInterface
    /**
 	* Constructor for listener
 	*
-	* @param \david63\acpusernotifications\controller\acp_user_notify_controller		$acp_user_controller	ACP User Controller
+	* @param \david63\acpusernotifications\controller\acp_user_notify_controller 	$acp_user_controller	ACP User Controller
 	*
 	* @access public
 	*/

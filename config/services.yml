@@ -21,6 +21,8 @@ services:
             - '@notification_manager'
             - '@dbal.conn'
             - '%tables%'
+            - '@log'
+            - '%core.root_path%ext/david63/acpusernotifications/adm/style/images'
 
     david63.acpusernotifications.core.functions:
         class: david63\acpusernotifications\core\functions

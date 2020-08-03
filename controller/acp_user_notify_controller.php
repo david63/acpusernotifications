@@ -21,6 +21,7 @@ use phpbb\language\language;
 use david63\acpusernotifications\core\functions;
 use phpbb\notification\manager;
 use phpbb\db\driver\driver_interface;
+use phpbb\log\log;
 
 /**
 * Event listener
@@ -60,8 +61,14 @@ class acp_user_notify_controller implements acp_user_notify_interface
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
+	/** @var \phpbb\log\log */
+	protected $log;
+
 	/** @var string phpBB tables */
 	protected $tables;
+
+	/** @var string */
+	protected $ext_images_path;
 
 	/**
 	* Constructor
@@ -79,11 +86,13 @@ class acp_user_notify_controller implements acp_user_notify_interface
 	* @param \phpbb\notification\manager					$notification_manager	Notification manager
 	* @param \phpbb\db\driver\driver_interface				$db						The db connection
 	* @param array											$tables					phpBB db tables
+	* @param \phpbb\log\log									$log					Log object
+	* @param string											$ext_images_path		Path to this extension's images
 	*
 	* @return \david63\acpusernotifications\controller\acp_user_notify_controller
 	* @access public
 	*/
-	public function __construct(user $user, config $config, auth $auth, request $request, $phpbb_root_path, $php_ext, template $template, language $language, functions $functions, manager $notification_manager, driver_interface $db, $tables)
+	public function __construct(user $user, config $config, auth $auth, request $request, $phpbb_root_path, $php_ext, template $template, language $language, functions $functions, manager $notification_manager, driver_interface $db, $tables, log $log, $ext_images_path)
 	{
 		$this->user					= $user;
 		$this->config				= $config;
@@ -97,6 +106,8 @@ class acp_user_notify_controller implements acp_user_notify_interface
 		$this->notification_manager = $notification_manager;
 		$this->db					= $db;
 		$this->tables				= $tables;
+		$this->log					= $log;
+		$this->ext_images_path		= $ext_images_path;
 	}
 
 	/**
@@ -106,10 +117,15 @@ class acp_user_notify_controller implements acp_user_notify_interface
 	*/
 	public function acp_users_notify($event)
 	{
-		// Add the language file
-		$this->language->add_lang('acp_users_notify', $this->functions->get_ext_namespace());
+		// Add the language files
+		$this->language->add_lang(array('acp_users_notify', 'acp_common'), $this->functions->get_ext_namespace());
 
-		$user_id = $event['user_id'];
+		// Are the PHP and phpBB versions valid for this extension?
+		$valid = $this->functions->ext_requirements();
+
+		$php_valid 		= $valid[0] ? true : false;
+		$phpbb_valid	= $valid[1] ? true : false;
+		$user_id		= $event['user_id'];
 
 		// Create a form key for preventing CSRF attacks
 		$form_key = 'acp_user_notify';
@@ -117,17 +133,15 @@ class acp_user_notify_controller implements acp_user_notify_interface
 
 		$action = append_sid("{$this->phpbb_root_path}adm/index.$this->phpEx" . '?i=acp_users&amp;mode=usernotify&amp;u=' . $user_id);
 
-		// Because of the way the notification system is written,
-		// we need to change to the actual user in order to retrieve the correct types and methods
-		// for the user being viewed...this is nothing more than a HACK :shock:
-		$user_data = $this->notify_change_user($user_id);
-
-		$subscriptions = $this->notification_manager->get_global_subscriptions($user_id);
+		// Because of the way the notification system is written, we need to change to the actual user in order
+		// to retrieve the correct types and methods for the user being viewed - this is nothing more than a HACK :shock:
+		$user_data 		= $this->notify_change_user($user_id);
+		$subscriptions	= $this->notification_manager->get_global_subscriptions($user_id);
 
 		$this->output_notification_methods();
 		$this->output_notification_types($subscriptions);
 
-		// We're in the ACP, have to have the auths for ACP stuff
+		// We are in the ACP, have to have the auths for ACP stuff
 		$user_data = $this->notify_change_user($user_id, 'restore', $user_data);
 
 		// Add/remove subscriptions
@@ -158,13 +172,27 @@ class acp_user_notify_controller implements acp_user_notify_interface
 				}
 			}
 
-			// Send updated message
+			// Add settings change action to the admin log and send updated message
+			$this->log->add('admin', $this->user->data['user_id'], $this->user->ip, 'LOG_ACP_USER_NOTIFY', time(), array($event['user_row']['username']));
 			trigger_error($this->language->lang('NOTIFICATIONS_UPDATED') . adm_back_link($action));
 		}
 
+		$version_data = $this->functions->version_check();
+
 		$this->template->assign_vars(array(
-			'S_AUN'		=> true,
-			'U_ACTION'	=> $action,
+			'EXT_IMAGE_PATH' 	=> $this->ext_images_path,
+
+			'NAMESPACE'			=> $this->functions->get_ext_namespace('twig'),
+
+			'PHP_VALID'			=> $php_valid,
+			'PHPBB_VALID'		=> $phpbb_valid,
+
+			'S_VERSION_CHECK'	=> (array_key_exists('current', $version_data)) ? $version_data['current'] : false,
+			'S_ACP_USER_NOTIFY'	=> true,
+
+			'U_ACTION'			=> $action,
+
+			'VERSION_NUMBER'	=> $this->functions->get_meta('version'),
 		));
 	}
 
@@ -173,13 +201,13 @@ class acp_user_notify_controller implements acp_user_notify_interface
 	*
 	* @param string $block
 	*/
-	public function output_notification_methods($block = 'notification_methods')
+	public function output_notification_methods()
 	{
 		$notification_methods = $this->notification_manager->get_subscription_methods();
 
 		foreach ($notification_methods as $method => $method_data)
 		{
-			$this->template->assign_block_vars($block, array(
+			$this->template->assign_block_vars('notification_methods', array(
 				'METHOD'	=> $method_data['id'],
 				'NAME'		=> $this->language->lang($method_data['lang']),
 			));
@@ -192,21 +220,19 @@ class acp_user_notify_controller implements acp_user_notify_interface
 	* @param array	$subscriptions Array containing global subscriptions
 	* @param string	$block
 	*/
-	public function output_notification_types($subscriptions, $block = 'notification_types')
+	public function output_notification_types($subscriptions)
 	{
 		$notification_methods = $this->notification_manager->get_subscription_methods();
 
 		foreach ($this->notification_manager->get_subscription_types() as $group => $subscription_types)
 		{
-			$this->template->assign_block_vars($block, array(
+			$this->template->assign_block_vars('notification_types', array(
 				'GROUP_NAME' => $this->language->lang($group),
 			));
 
-				//$this->template->alter_block_array($block, array('GROUP_NAME' => $this->language->lang('NOTIFICATION_GROUP_MODERATION')), true, 'delete');
-
 			foreach ($subscription_types as $type => $type_data)
 			{
-				$this->template->assign_block_vars($block, array(
+				$this->template->assign_block_vars('notification_types', array(
 					'EXPLAIN'	=> (isset($this->language->lang[$type_data['lang'] . '_EXPLAIN'])) ? $this->language->lang($type_data['lang'] . '_EXPLAIN') : '',
 					'NAME'		=> $this->language->lang($type_data['lang']),
 					'TYPE'		=> $type,
@@ -214,7 +240,7 @@ class acp_user_notify_controller implements acp_user_notify_interface
 
 				foreach ($notification_methods as $method => $method_data)
 				{
-					$this->template->assign_block_vars($block . '.notification_methods', array(
+					$this->template->assign_block_vars('notification_types' . '.notification_methods', array(
 						'AVAILABLE'		=> $method_data['method']->is_available($type_data['type']),
 						'METHOD'		=> $method_data['id'],
 						'NAME'			=> $this->language->lang($method_data['lang']),
@@ -225,18 +251,18 @@ class acp_user_notify_controller implements acp_user_notify_interface
 		}
 
 		$this->template->assign_vars(array(
-			strtoupper($block) . '_COLS' => count($notification_methods) + 1,
+			strtoupper('notification_types') . '_COLS' => count($notification_methods) + 1,
 		));
 	}
 
 	/**
-	* notify_change_user
+	* Swap the Admin user for the actual user
 	*
-	* @param $user_id	the user id whose notification types we are looking at
-	* @param $mode		the mode either replace or restore
-	* @param $bkup_data	an array of the current users data
+	* @param $user_id	The user id whose notification types we are looking at
+	* @param $mode		The mode either replace or restore
+	* @param $bkup_data	An array of the current user's data
 	*
-	* changes the user in the ACP to that of the user chosen in the ACP
+	* Changes the user in the ACP to that of the user chosen in the ACP
 	*/
 	public function notify_change_user($user_id, $mode = 'replace', $bkup_data = false)
 	{
@@ -256,8 +282,7 @@ class acp_user_notify_controller implements acp_user_notify_interface
 
 				$this->db->sql_freeresult($result);
 
-				// Reset the current user's info to that of the notify user
-				// we do this instead of just using the sql query
+				// Reset the current user's info to that of the notify user. We do this instead of just using the sql query
 				// for items such as $this->user->data['is_registered'] which isn't a table column from the users table
 				$this->user->data = array_merge($this->user->data, $row);
 

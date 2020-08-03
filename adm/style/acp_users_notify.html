@@ -1,46 +1,109 @@
-<form id="ucp" method="post" action="{{ U_ACTION }}"{{ S_FORM_ENCTYPE }}>
+{% INCLUDECSS '@' ~ NAMESPACE ~ '/css/acp.css' %}
 
 <h2>{{ lang('NOTIFY_EDIT') }}</h2>
 <div class="panel">
 	<div class="inner">
-		<p>{{ lang('NOTIFY_EDIT_EXPLAIN') }}</p>
-			<table class="table1">
-				<thead>
-					<tr>
-						<th>{{ lang('NOTIFICATION_TYPE') }}</th>
-						{% for notification_methods in loops.notification_methods %}
-							<th class="mark">{{ notification_methods.NAME }}</th>
-						{% endfor %}
-					</tr>
-				</thead>
-
-				<tbody>
-					{% for notification_types in loops.notification_types %}
-						{% if notification_types.GROUP_NAME %}
-							<tr class="row3">
-								<td colspan="{{ NOTIFICATION_TYPES_COLS }}">{{ notification_types.GROUP_NAME }}</td>
-							</tr>
-						{% else %}
-							<tr class="{% if notification_types.S_ROW_COUNT is odd %}row1{% else %}row2{% endif %}">
-								<td>
-									{{ notification_types.NAME }}
-									{% if notification_types.EXPLAIN %}<br />&nbsp; &nbsp;{{ notification_types.EXPLAIN }}{% endif %}
-								</td>
-								{% for notification_methods in notification_types.notification_methods %}
-									<td class="mark"><input type="checkbox" name="{{ notification_types.TYPE }}_{{ notification_methods.METHOD }}"{% if  notification_methods.AVAILABLE and notification_methods.SUBSCRIBED %} checked="checked"{% endif %}{% if not notification_methods.AVAILABLE %} disabled="disabled"{% endif %} /></td>
-								{% endfor %}
-							</tr>
-						{% endif %}
-					{% endfor %}
-				</tbody>
-			</table>
+		{{ lang('NOTIFY_EDIT_EXPLAIN') }}
+		<div class="version-wrapper" style="float: {{ S_CONTENT_FLOW_END }};">
+			<div class="version-text">{{ lang('VERSION') }}</div>
+			<div class="version-data">{{ VERSION_NUMBER }}</div>
+		</div>
 	</div>
 </div>
 
-<fieldset class="quick">
-	<input type="submit" name="submit" value="{{ lang('SUBMIT') }}" class="button1" />
-	<div><a href="#" onclick="$('#ucp input:checkbox').prop('checked', true); return false;">{{ lang('MARK_ALL') }}</a> &bull; <a href="#" onclick="$('#ucp input:checkbox').prop('checked', false); return false;">{{ lang('UNMARK_ALL') }}</a></div>
-	{{ S_FORM_TOKEN }}
-</fieldset>
+{% if not PHP_VALID %}
+	<div class="head-panel-error">
+		{{ lang('PHP_NOT_VALID') }}
+	</div>
+{% endif %}
 
-</form>
+{% if not PHPBB_VALID %}
+	<div class="head-panel-error">
+		{{ lang('PHPBB_NOT_VALID') }}
+	</div>
+{% endif %}
+
+{% if PHP_VALID and PHPBB_VALID %}
+	<noscript>
+		<div class="head-panel-error">
+			{{ lang('NO_JS') }}
+		</div>
+	</noscript>
+
+	{% if S_VERSION_CHECK %}
+		{% if S_VERSION_CHECK == 'fail' %}
+			<div class="head-panel-noversion">
+				<div class="head-description">{{ lang('NO_VERSION_EXPLAIN') }}</div>
+			</div>
+		{% else %}
+			<div class="head-panel-version">
+				<div class="head-title">{{ lang('NEW_VERSION', S_VERSION_CHECK) }}</div>
+				<div class="head-description">{{ lang('NEW_VERSION_EXPLAIN', S_VERSION_CHECK, DOWNLOAD) }}</div>
+			</div>
+		{% endif %}
+	{% endif %}
+
+	<form id="ucp" method="post" action="{{ U_ACTION }}"{{ S_FORM_ENCTYPE }}>
+
+		<table class="table1">
+			<thead>
+				<tr>
+					<th>{{ lang('NOTIFICATION_TYPE') }}</th>
+					{% for notification_methods in loops.notification_methods %}
+						<th class="mark">{{ notification_methods.NAME }}</th>
+					{% endfor %}
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for notification_types in loops.notification_types %}
+					{% if notification_types.GROUP_NAME %}
+						<tr class="row3">
+							<td colspan="{{ NOTIFICATION_TYPES_COLS }}">{{ notification_types.GROUP_NAME }}</td>
+						</tr>
+					{% else %}
+						<tr class="{% if notification_types.S_ROW_COUNT is odd %}row1{% else %}row2{% endif %}">
+							<td>
+								{{ notification_types.NAME }}
+								{% if notification_types.EXPLAIN %}<br />&nbsp; &nbsp;{{ notification_types.EXPLAIN }}{% endif %}
+							</td>
+							{% for notification_methods in notification_types.notification_methods %}
+								<td class="mark"><input type="checkbox" name="{{ notification_types.TYPE }}_{{ notification_methods.METHOD }}"{% if  notification_methods.AVAILABLE and notification_methods.SUBSCRIBED %} checked="checked"{% endif %}{% if not notification_methods.AVAILABLE %} disabled="disabled"{% endif %} /></td>
+							{% endfor %}
+						</tr>
+					{% endif %}
+				{% endfor %}
+			</tbody>
+		</table>
+
+		<fieldset class="quick">
+			<input type="submit" name="submit" value="{{ lang('SUBMIT') }}" class="button1" />
+			<div><a href="#" onclick="$('#ucp input:checkbox').prop('checked', true); return false;">{{ lang('MARK_ALL') }}</a> &bull; <a href="#" onclick="$('#ucp input:checkbox').prop('checked', false); return false;">{{ lang('UNMARK_ALL') }}</a></div>
+			{{ S_FORM_TOKEN }}
+		</fieldset>
+	</form>
+
+	<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+		<fieldset>
+			<legend class="collapsible">{{ lang('CLICK_DONATE') }}</legend>
+
+			<div class="donate-content">
+				<dl>
+					<dt><label for="donate">{{ lang('DONATE_EXTENSIONS') }}{{ lang('COLON') }}</label><br><span>{{ lang('DONATE_EXTENSIONS_EXPLAIN') }}</span></dt>
+					<dd>
+						<div class="aligner">
+							<div class="aligner-item">
+								<input type="hidden" name="cmd" value="_s-xclick" />
+								<input type="hidden" name="hosted_button_id" value="8QF58X7DVHKJ4" />
+								<button class="paypal_btn" type="submit" name="submit" title="{{ lang('PAYPAL_TITLE') }}" alt="{{ lang('PAYPAL_BUTTON') }}" />{{ lang('DONATE') }}</button>
+							</div>
+						</div>
+						<img class="qrimage" src="{{ EXT_IMAGE_PATH }}/qrcode.png">
+					</dd>
+				</dl>
+			</div>
+		</fieldset>
+	</form>
+
+	{% INCLUDEJS '@' ~ NAMESPACE ~ '/js/donate-collapse.js' %}
+{% endif %}

@@ -1,8 +1,8 @@
 <?php
 /**
 *
-* @package Mail to Post Extension
-* @copyright (c) 2019 david63
+* @package ACP User Notifications
+* @copyright (c) 2020 david63
 * @license GNU General Public License, version 2 (GPL-2.0)
 *
 */

@@ -14,7 +14,7 @@ use phpbb\db\migration\migration;
 class acp_modules extends migration
 {
 	/**
-	* Add the ACP modules
+	* Add the ACP module
 	*
 	* @return array Array update data
 	* @access public
