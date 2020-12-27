@@ -40,4 +40,6 @@ $lang = array_merge($lang, array(
 	'ACP_USER_USERNOTIFY'	=> 'Notifications',
 
 	'LOG_ACP_USER_NOTIFY'	=> '<strong>Updated notification options<br></strong>» %1$s',
+
+	'USER_NOTIFICATIONS'	=> 'User notifications',
 ));

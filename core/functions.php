@@ -1,11 +1,11 @@
 <?php
 /**
-*
-* @package ACP User Notifications
-* @copyright (c) 2020 david63
-* @license GNU General Public License, version 2 (GPL-2.0)
-*
-*/
+ *
+ * @package ACP User Notifications
+ * @copyright (c) 2020 david63
+ * @license GNU General Public License, version 2 (GPL-2.0)
+ *
+ */
 
 namespace david63\acpusernotifications\core;
 
@@ -13,33 +13,33 @@ use phpbb\extension\manager;
 use phpbb\exception\version_check_exception;
 
 /**
-* functions
-*/
+ * functions
+ */
 class functions
 {
 	/** @var \phpbb\extension\manager */
 	protected $phpbb_extension_manager;
 
 	/**
-	* Constructor for functions
-	*
-	* @param \phpbb\extension\manager	$phpbb_extension_manager	Extension manager
-	*
-	* @access public
-	*/
+	 * Constructor for functions
+	 *
+	 * @param \phpbb\extension\manager   $phpbb_extension_manager    Extension manager
+	 *
+	 * @access public
+	 */
 	public function __construct(manager $phpbb_extension_manager)
 	{
-		$this->ext_manager	= $phpbb_extension_manager;
+		$this->ext_manager = $phpbb_extension_manager;
 
-		$this->namespace	= __NAMESPACE__;
+		$this->namespace = __NAMESPACE__;
 	}
 
 	/**
-	* Get the extension's namespace
-	*
-	* @return $extension_name
-	* @access public
-	*/
+	 * Get the extension's namespace
+	 *
+	 * @return $extension_name
+	 * @access public
+	 */
 	public function get_ext_namespace($mode = 'php')
 	{
 		// Let's extract the extension name from the namespace
@@ -50,32 +50,32 @@ class functions
 		{
 			case 'php':
 				$extension_name = str_replace('\\', '/', $extension_name);
-			break;
+				break;
 
 			case 'twig':
 				$extension_name = str_replace('\\', '_', $extension_name);
-			break;
+				break;
 		}
 
 		return $extension_name;
 	}
 
 	/**
-	* Check if there is an updated version of the extension
-	*
-	* @return $new_version
-	* @access public
-	*/
+	 * Check if there is an updated version of the extension
+	 *
+	 * @return $new_version
+	 * @access public
+	 */
 	public function version_check()
 	{
 		if ($this->get_meta('host') == 'www.phpbb.com')
 		{
-			$port 	= 'https://';
-			$stable	= null;
+			$port   = 'https://';
+			$stable = null;
 		}
 		else
 		{
-			$port 	= 'http://';
+			$port   = 'http://';
 			$stable = 'unstable';
 		}
 
@@ -84,8 +84,8 @@ class functions
 		{
 			try
 			{
-				$md_manager 	= $this->ext_manager->create_extension_metadata_manager($this->get_ext_namespace());
-				$version_data	= $this->ext_manager->version_check($md_manager, true, false, $stable);
+				$md_manager   = $this->ext_manager->create_extension_metadata_manager($this->get_ext_namespace());
+				$version_data = $this->ext_manager->version_check($md_manager, true, false, $stable);
 			}
 			catch (version_check_exception $e)
 			{
@@ -101,14 +101,14 @@ class functions
 	}
 
 	/**
-	* Get a meta_data key value
-	*
-	* @return $meta_data
-	* @access public
-	*/
+	 * Get a meta_data key value
+	 *
+	 * @return $meta_data
+	 * @access public
+	 */
 	public function get_meta($data)
 	{
-		$meta_data	= '';
+		$meta_data  = '';
 		$md_manager = $this->ext_manager->create_extension_metadata_manager($this->get_ext_namespace());
 
 		foreach (new \RecursiveIteratorIterator(new \RecursiveArrayIterator($md_manager->get_metadata('all'))) as $key => $value)
@@ -123,11 +123,11 @@ class functions
 	}
 
 	/**
-	* Check that the reqirements are met for this extension
-	*
-	* @return array
-	* @access public
-	*/
+	 * Check that the reqirements are met for this extension
+	 *
+	 * @return array
+	 * @access public
+	 */
 	public function ext_requirements()
 	{
 		$php_valid = $phpbb_valid = false;
@@ -143,8 +143,8 @@ class functions
 		}
 
 		// Check phpBB versions are valid
-		$phpbb_versn	= htmlspecialchars_decode($this->get_meta('phpbb/phpbb'));
-		$phpbb_vers		= explode(',', $phpbb_versn);
+		$phpbb_versn = htmlspecialchars_decode($this->get_meta('phpbb/phpbb'));
+		$phpbb_vers  = explode(',', $phpbb_versn);
 
 		if ($phpbb_vers[0])
 		{
@@ -160,6 +160,6 @@ class functions
 			}
 		}
 
-		return array($php_valid, $phpbb_valid);
+		return [$php_valid, $phpbb_valid];
 	}
 }
