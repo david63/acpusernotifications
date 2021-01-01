@@ -10,6 +10,8 @@ Adds an option to the ACP Manage users to edit a user's notifications.
 [![codecov](https://codecov.io/gh/david63/acpusernotifications/branch/master/graph/badge.svg?token=D2500PgRex)](https://codecov.io/gh/david63/acpusernotifications)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/59902be2665c476dbd7951858c9ff769)](https://www.codacy.com/manual/david63/acpusernotifications?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=david63/acpusernotifications&amp;utm_campaign=Badge_Grade)
 
+[![Compatible](https://img.shields.io/badge/compatible-phpBB:3.3.x-blue.svg)](https://shields.io/)
+
 ## Minimum Requirements
   * phpBB 3.3.0
   * PHP 7.1.3
