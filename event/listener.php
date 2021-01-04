@@ -21,13 +21,13 @@ use david63\acpusernotifications\controller\acp_user_notify_controller;
  */
 class listener implements EventSubscriberInterface
 {
-	/** @var \david63\acpusernotifications\controller\acp_user_notify_controller */
+	/** @var acp_user_notify_controller */
 	protected $acp_user_notify_controller;
 
 	/**
 	 * Constructor for listener
 	 *
-	 * @param \david63\acpusernotifications\controller\acp_user_notify_controller    $acp_user_controller    ACP User Controller
+	 * @param acp_user_notify_controller    $acp_user_controller    ACP User Controller
 	 *
 	 * @access public
 	 */

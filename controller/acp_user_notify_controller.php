@@ -28,16 +28,16 @@ use phpbb\log\log;
  */
 class acp_user_notify_controller
 {
-	/** @var \phpbb\user */
+	/** @var user */
 	protected $user;
 
-	/** @var \phpbb\config\config */
+	/** @var config */
 	protected $config;
 
-	/** @var \phpbb\auth\auth */
+	/** @var auth */
 	protected $auth;
 
-	/** @var \phpbb\request\request */
+	/** @var request */
 	protected $request;
 
 	/** @var string phpBB root path */
@@ -46,22 +46,22 @@ class acp_user_notify_controller
 	/** @var string PHP extension */
 	protected $phpEx;
 
-	/** @var \phpbb\template\template */
+	/** @var template */
 	protected $template;
 
-	/** @var \phpbb\language\language */
+	/** @var language */
 	protected $language;
 
-	/** @var \david63\acpusernotifications\core\functions */
+	/** @var functions */
 	protected $functions;
 
-	/** @var \phpbb\notification\manager */
+	/** @var managermanager */
 	protected $notification_manager;
 
-	/** @var \phpbb\db\driver\driver_interface */
+	/** @var driver_interface */
 	protected $db;
 
-	/** @var \phpbb\log\log */
+	/** @var log */
 	protected $log;
 
 	/** @var string phpBB tables */
@@ -73,21 +73,20 @@ class acp_user_notify_controller
 	/**
 	 * Constructor
 	 *
-	 * @param \phpbb\user                                    $user                   User object
-	 * @param \phpbb\config\config                           $config                 Config object
-	 * @param \phpbb\auth\auth                               $auth                   Auth object
-	 * @param \phpbb\request\request                         $request                Request object
-	 * @param \phpbb\db\driver\driver_interface              $db                     The db connection
-	 * @param string                                         $root_path              phpBB root path
-	 * @param string                                         $php_ext                php ext
-	 * @param \phpbb\template\template                       $template               Template object
-	 * @param \phpbb\language\language                       $language               Language object
-	 * @param \david63\acpusernotifications\core\functions   $functions              Functions for the extension
-	 * @param \phpbb\notification\manager                    $notification_manager   Notification manager
-	 * @param \phpbb\db\driver\driver_interface              $db                     The db connection
-	 * @param array                                          $tables                 phpBB db tables
-	 * @param \phpbb\log\log                                 $log                    Log object
-	 * @param string                                         $ext_images_path        Path to this extension's images
+	 * @param user					$user                   User object
+	 * @param config				$config                 Config object
+	 * @param auth					$auth                   Auth object
+	 * @param request				$request                Request object
+	 * @param driver_interface		$db                     The db connection
+	 * @param string				$root_path              phpBB root path
+	 * @param string				$php_ext                php ext
+	 * @param template				$template               Template object
+	 * @param language				$language               Language object
+	 * @param functions   			$functions              Functions for the extension
+	 * @param managermanager		$notification_manager   Notification manager
+	 * @param array					$tables                 phpBB db tables
+	 * @param log					$log                    Log object
+	 * @param string				$ext_images_path        Path to this extension's images
 	 *
 	 * @return \david63\acpusernotifications\controller\acp_user_notify_controller
 	 * @access public
