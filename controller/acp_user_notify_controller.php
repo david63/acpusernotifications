@@ -64,7 +64,7 @@ class acp_user_notify_controller
 	/** @var log */
 	protected $log;
 
-	/** @var string phpBB tables */
+	/** @var array phpBB tables */
 	protected $tables;
 
 	/** @var string */
@@ -251,12 +251,7 @@ class acp_user_notify_controller
 	}
 
 	/**
-	 *
-	 * Function by RMcGirr83
-	 */
-
-	/**
-	 * Swap the Admin user for the actual user
+	 * Swap the Admin user for the actual user - by RMcGirr83
 	 *
 	 * @param $user_id   The user id whose notification types we are looking at
 	 * @param $mode      The mode either replace or restore
@@ -292,7 +287,7 @@ class acp_user_notify_controller
 				unset($row);
 
 				return $bkup_data;
-				break;
+			break;
 
 			// Now we restore the user's stuff
 			case 'restore':
@@ -302,7 +297,7 @@ class acp_user_notify_controller
 				$this->auth->acl($this->user->data);
 
 				unset($bkup_data);
-				break;
+			break;
 		}
 	}
 }
